@@ -1,314 +1,1390 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Sensei Mode — The Research</title>
-<meta name="description" content="A Claude Code skill that turns Claude from a doer into a guide, built on 10 learning-science foundations."/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensei Mode — AI as Guide, Not Doer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --accent: #d4a24c; --paper: #f3ead3; --ink: #121212; }
-  .reveal { font-family: ui-serif, Georgia, "Times New Roman", serif; }
-  .reveal h1, .reveal h2, .reveal h3 { font-family: ui-serif, Georgia, "Times New Roman", serif; letter-spacing: -0.01em; }
-  .reveal h1 { color: var(--paper); }
-  .reveal h2 { color: var(--accent); font-weight: 600; }
-  .reveal h3 { color: var(--paper); font-weight: 400; font-style: italic; }
-  .reveal .accent { color: var(--accent); }
-  .reveal .quote { font-style: italic; color: #ccc; border-left: 3px solid var(--accent); padding-left: 1em; text-align: left; }
-  .reveal .cite { font-size: 0.5em; color: #888; display: block; margin-top: 1em; }
-  .reveal table { font-size: 0.6em; margin: 0 auto; }
-  .reveal table th { color: var(--accent); border-bottom: 1px solid var(--accent); padding: .4em .8em; }
-  .reveal table td { padding: .4em .8em; border-bottom: 1px solid #333; }
-  .reveal table tr.win td { color: var(--paper); }
-  .reveal table tr.win td:nth-child(2) { color: var(--accent); font-weight: 600; }
-  .reveal .big { font-size: 2.2em; color: var(--accent); font-weight: 700; }
-  .reveal .kana { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: var(--accent); font-size: 1.8em; }
-  .reveal section.cover { text-align: center; }
-  .reveal section.cover .kana { font-size: 4em; margin-bottom: 0.1em; display: block; }
-  .reveal section.cover h1 { font-size: 2.4em; margin: 0; }
-  .reveal section.cover .tag { color: #aaa; font-style: italic; margin-top: 0.6em; }
-  .reveal section.cover .meta { color: #666; font-size: 0.5em; margin-top: 3em; }
-  .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; text-align: left; }
-  .reveal ul { list-style: none; padding-left: 0; }
-  .reveal ul li { padding: .25em 0; border-bottom: 1px dashed #333; }
-  .reveal .level { color: var(--accent); font-weight: 700; }
-  .reveal .footer { position: fixed; bottom: 10px; right: 20px; font-size: 0.4em; color: #555; }
-  .reveal a { color: var(--accent); }
-  code { background: #1b1b1b; padding: 0.1em 0.4em; border-radius: 3px; color: var(--paper); }
-  pre code { font-size: 0.75em; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f172a;
+    --panel: #1e3a5f;
+    --panel-light: #1e293b;
+    --panel-border: #2d4a7a;
+    --accent: #3b82f6;
+    --accent-bright: #60a5fa;
+    --accent-dim: #1d4ed8;
+    --text: #bfdbfe;
+    --text-dim: #7eb3d8;
+    --text-bright: #e0f0ff;
+    --text-muted: #4a7fa8;
+    --danger: #f87171;
+    --warn: #fb923c;
+    --success: #34d399;
+    --gold: #fbbf24;
+    --purple: #a78bfa;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  .deck {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 64px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    transform: translateY(12px);
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+
+  .slide.exiting {
+    opacity: 0;
+    transform: translateY(-12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  /* ── Navigation ─────────────────────────────── */
+  #nav {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(15,23,42,0.85);
+    border: 1px solid var(--panel-border);
+    border-radius: 40px;
+    padding: 10px 20px;
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+
+  #nav button {
+    background: none;
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  #nav button:hover { background: var(--panel); border-color: var(--accent); }
+  #nav button:disabled { opacity: 0.3; cursor: default; }
+
+  #counter {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    min-width: 52px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Progress bar ────────────────────────────── */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent-bright));
+    transition: width 0.4s ease;
+    z-index: 100;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* ── Slide number badge ──────────────────────── */
+  #slide-badge {
+    position: fixed;
+    top: 18px; right: 24px;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+  }
+
+  /* ── Common elements ─────────────────────────── */
+  .tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-bright);
+    margin-bottom: 14px;
+    opacity: 0.85;
+  }
+
+  h1 {
+    font-size: clamp(32px, 5vw, 60px);
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  h2 {
+    font-size: clamp(24px, 3.5vw, 42px);
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  h3 {
+    font-size: clamp(16px, 2vw, 22px);
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 8px;
+  }
+
+  p, li {
+    font-size: clamp(13px, 1.6vw, 17px);
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .subtitle {
+    font-size: clamp(14px, 1.8vw, 20px);
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  .panel {
+    background: var(--panel-light);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 24px 28px;
+  }
+
+  .panel.accent-border {
+    border-color: var(--accent);
+    border-left-width: 3px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 1000px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 1100px;
+  }
+
+  .w-full { width: 100%; max-width: 980px; }
+  .w-wide { width: 100%; max-width: 1100px; }
+
+  .stat-big {
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .highlight { color: var(--accent-bright); }
+  .danger { color: var(--danger); }
+  .success { color: var(--success); }
+  .warn { color: var(--warn); }
+  .gold { color: var(--gold); }
+  .purple { color: var(--purple); }
+  .muted { color: var(--text-muted); }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    color: var(--accent-bright);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 16px 24px;
+    margin: 0;
+    font-size: clamp(14px, 1.9vw, 19px);
+    line-height: 1.7;
+    color: var(--text-bright);
+    font-style: italic;
+    background: rgba(59,130,246,0.06);
+    border-radius: 0 10px 10px 0;
+  }
+
+  blockquote cite {
+    display: block;
+    margin-top: 10px;
+    font-size: 12px;
+    font-style: normal;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Slide 1: Title ──────────────────────────── */
+  .title-slide {
+    background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.07) 0%, transparent 50%),
+                var(--bg);
+    text-align: center;
+  }
+
+  .title-slide .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-bright);
+    margin-bottom: 24px;
+    opacity: 0.8;
+  }
+
+  .title-slide h1 { margin-bottom: 16px; }
+
+  .title-divider {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    margin: 24px auto;
+    border-radius: 2px;
+  }
+
+  .title-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Bar chart ───────────────────────────────── */
+  .bar-chart {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 200px 1fr 60px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .bar-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+    line-height: 1.3;
+  }
+
+  .bar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    height: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    transition: width 1s cubic-bezier(0.4,0,0.2,1);
+    width: 0;
+  }
+
+  .bar-fill.low { background: linear-gradient(90deg, #7f1d1d, var(--danger)); }
+  .bar-fill.high { background: linear-gradient(90deg, #1e3a5f, var(--success)); }
+
+  .bar-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-bright);
+    text-align: right;
+  }
+
+  .bar-cliff {
+    grid-column: 1/-1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 4px 0;
+    position: relative;
+  }
+
+  .bar-cliff::after {
+    content: 'THE CLIFF';
+    position: absolute;
+    right: 64px;
+    top: -9px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    background: var(--bg);
+    padding: 0 6px;
+  }
+
+  /* ── ZPD Diagram ─────────────────────────────── */
+  .zpd-diagram {
+    position: relative;
+    width: 380px;
+    height: 220px;
+    flex-shrink: 0;
+  }
+
+  .zpd-circle {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .zpd-outer {
+    width: 380px; height: 220px;
+    left: 0; top: 0;
+    background: rgba(167,139,250,0.08);
+    border: 2px solid rgba(167,139,250,0.3);
+  }
+
+  .zpd-middle {
+    width: 260px; height: 155px;
+    left: 60px; top: 32px;
+    background: rgba(59,130,246,0.12);
+    border: 2px solid rgba(59,130,246,0.4);
+  }
+
+  .zpd-inner {
+    width: 150px; height: 90px;
+    left: 115px; top: 65px;
+    background: rgba(52,211,153,0.12);
+    border: 2px solid rgba(52,211,153,0.4);
+  }
+
+  .zpd-label {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* ── Scaffolding Ladder ──────────────────────── */
+  .ladder {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .rung {
+    display: flex;
+    align-items: stretch;
+    position: relative;
+  }
+
+  .rung-level {
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-bright);
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 2px solid var(--panel-border);
+    padding: 10px 0;
+  }
+
+  .rung-body {
+    flex: 1;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(45,74,122,0.5);
+  }
+
+  .rung-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .rung-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .rung-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 8px;
+  }
+
+  /* ── Atrophy curve ───────────────────────────── */
+  .curve-svg { width: 100%; max-width: 560px; }
+
+  /* ── Rules grid ──────────────────────────────── */
+  .rule-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(45,74,122,0.4);
+  }
+
+  .rule-row:last-child { border-bottom: none; }
+
+  .rule-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .rule-icon.never { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .rule-icon.always { background: rgba(52,211,153,0.15); color: var(--success); }
+
+  /* ── Touch scale ─────────────────────────────── */
+  .touch-scale {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 860px;
+    flex-wrap: nowrap;
+  }
+
+  .touch-step {
+    flex: 1;
+    text-align: center;
+    padding: 20px 8px;
+    position: relative;
+  }
+
+  .touch-step::after {
+    content: '→';
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 16px;
+  }
+
+  .touch-step:last-child::after { display: none; }
+
+  .touch-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .touch-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-bright);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .touch-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .touch-step.lightest { background: rgba(52,211,153,0.06); border-radius: 10px; border: 1px solid rgba(52,211,153,0.2); }
+  .touch-step.heaviest { background: rgba(248,113,113,0.06); border-radius: 10px; border: 1px solid rgba(248,113,113,0.15); }
+
+  /* ── CTA slide ───────────────────────────────── */
+  .cta-slide {
+    background: radial-gradient(ellipse at 50% 60%, rgba(59,130,246,0.15) 0%, transparent 65%),
+                var(--bg);
+    text-align: center;
+  }
+
+  .cta-tagline {
+    font-size: clamp(22px, 3.5vw, 40px);
+    font-weight: 800;
+    color: var(--text-bright);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .cta-tagline .line2 { color: var(--accent-bright); }
+
+  /* ── Stat cards ──────────────────────────────── */
+  .stat-card {
+    padding: 24px;
+    border-radius: 14px;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    color: var(--text-dim);
+  }
+
+  /* ── Sigma diagram ───────────────────────────── */
+  .sigma-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    height: 140px;
+  }
+
+  .sigma-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .sigma-fill {
+    width: 100%;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    transition: height 1s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .sigma-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* ── Misc ────────────────────────────────────── */
+  .pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .divider {
+    width: 48px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 16px 0;
+  }
+
+  .flex-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    width: 100%;
+    max-width: 1060px;
+  }
+
+  .flex-col { display: flex; flex-direction: column; }
+
+  ul.clean { list-style: none; padding: 0; }
+  ul.clean li { padding: 7px 0; border-bottom: 1px solid rgba(45,74,122,0.4); }
+  ul.clean li:last-child { border-bottom: none; }
+
+  .number-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--text-bright);
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .cmd-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+
+  .cmd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 6px 14px;
+    background: rgba(59,130,246,0.12);
+    border: 1px solid rgba(59,130,246,0.35);
+    border-radius: 6px;
+    color: var(--accent-bright);
+  }
+
+  /* ── Responsive tweaks ───────────────────────── */
+  @media (max-width: 900px) {
+    .slide { padding: 32px 32px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .flex-row { flex-direction: column; }
+    .bar-row { grid-template-columns: 140px 1fr 48px; }
+    .bar-label { font-size: 10px; }
+    .zpd-diagram { transform: scale(0.8); transform-origin: top left; }
+    .touch-scale { flex-direction: column; }
+    .touch-step::after { display: none; }
+  }
 </style>
 </head>
 <body>
-<div class="footer">⛩️ sensei mode · <a href="https://github.com/fredlemieux/claude-sensei-skill">github</a></div>
-<div class="reveal"><div class="slides">
 
-<section class="cover">
-  <span class="kana">先生</span>
-  <h1>Sensei Mode</h1>
-  <div class="tag">A Claude Code skill that guides rather than solves.</div>
-  <div class="meta">Research &amp; design — <a href="https://github.com/fredlemieux/claude-sensei-skill">fredlemieux/claude-sensei-skill</a></div>
-</section>
+<div id="progress"></div>
+<div id="slide-badge">1 / 14</div>
 
-<section>
-  <h2>The problem</h2>
-  <p class="quote">
-    "I'm really thinking about the lack of learning and deep thinking and the
-    handing over of all the work... it's hugely productive and I'm getting
-    an insane amount done... but I'm losing something."
-  </p>
-  <p class="cite">— The developer who commissioned this skill.</p>
-  <p>This is not a feeling. It's backed by hard science.</p>
-</section>
+<div class="deck" id="deck">
 
-<section>
-  <h2>Anthropic RCT, 2026</h2>
-  <p>52 professional developers. Randomised. Controlled.</p>
-  <p class="big">−17 pp</p>
-  <p>Developers using AI scored <span class="accent">17 percentage points lower</span> on comprehension (50% vs 67%).</p>
-  <p>Largest gap: <strong>debugging</strong>. The exact skill needed to supervise AI output.</p>
-  <p class="cite"><a href="https://arxiv.org/html/2601.20245v1">arxiv.org/html/2601.20245v1</a></p>
-</section>
+  <!-- ── Slide 1: Title ───────────────────────── -->
+  <section class="slide title-slide active" data-index="0">
+    <div class="eyebrow">Research & Design · 2026</div>
+    <h1>Sensei Mode</h1>
+    <div class="subtitle">AI as Guide, Not Doer</div>
+    <div class="title-divider"></div>
+    <p style="max-width:520px; text-align:center; color:var(--text-dim); font-size:15px; line-height:1.7;">
+      The science of AI-assisted learning without skill atrophy — and a design for a mentor that refuses to hand you the answer.
+    </p>
+    <div class="title-meta" style="margin-top: 32px;">
+      Anthropic RCT &nbsp;·&nbsp; METR Study &nbsp;·&nbsp; Vygotsky &nbsp;·&nbsp; Bjork &nbsp;·&nbsp; Ericsson &nbsp;·&nbsp; Bloom
+    </div>
+    <a href="https://github.com/fredlemieux/claude-sensei-skill" target="_blank" rel="noopener"
+       style="margin-top: 36px; display: inline-flex; align-items: center; gap: 10px;
+              padding: 10px 20px; border-radius: 999px;
+              background: rgba(59,130,246,0.1);
+              border: 1px solid rgba(59,130,246,0.35);
+              color: var(--accent-bright); text-decoration: none;
+              font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+              transition: background 0.2s, border-color 0.2s, transform 0.2s;"
+       onmouseover="this.style.background='rgba(59,130,246,0.18)';this.style.borderColor='var(--accent-bright)';this.style.transform='translateY(-1px)'"
+       onmouseout="this.style.background='rgba(59,130,246,0.1)';this.style.borderColor='rgba(59,130,246,0.35)';this.style.transform='none'">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      View on GitHub
+      <span style="color: var(--text-muted); font-weight: 400;">fredlemieux/claude-sensei-skill</span>
+    </a>
+  </section>
 
-<section>
-  <h2>METR study, 2025</h2>
-  <p>16 experienced OSS devs with AI tools.</p>
-  <p class="big">−19% speed</p>
-  <p>…but they <em>believed</em> they were <span class="accent">20% faster</span>.</p>
-  <p>The perception gap is the scariest part — you can't self-assess the damage.</p>
-  <p class="cite"><a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">metr.org</a></p>
-</section>
+  <!-- ── Slide 2: The Problem ──────────────────── -->
+  <section class="slide" data-index="1">
+    <div class="tag">The Problem</div>
+    <h2>Something Is Being Lost</h2>
+    <div class="w-full" style="margin-top: 24px;">
+      <blockquote>
+        "I'm really thinking about the lack of learning and deep thinking and the handing over of all the work to yourself... it's hugely productive and I'm getting an insane amount done... but I'm losing something."
+        <cite>— The feeling that triggered this research</cite>
+      </blockquote>
+    </div>
+    <div class="grid-2" style="margin-top: 28px;">
+      <div class="panel">
+        <div class="stat-big warn">+∞</div>
+        <div class="stat-label" style="margin-top: 8px;">Output velocity</div>
+        <p style="font-size:13px; color:var(--text-dim); margin-top:6px;">Shipping more than ever before</p>
+      </div>
+      <div class="panel">
+        <div class="stat-big danger">−?</div>
+        <div class="stat-label" style="margin-top: 8px;">Understanding depth</div>
+        <p style="font-size:13px; color:var(--text-dim); margin-top:6px;">The silent cost no one is measuring</p>
+      </div>
+    </div>
+    <p style="margin-top: 24px; font-size:14px; color:var(--text-muted); max-width:600px; text-align:center;">
+      And the scariest part: you may not even notice it happening.
+    </p>
+  </section>
 
-<section>
-  <h2>Six interaction patterns</h2>
-  <h3>(Anthropic RCT — worst to best)</h3>
-  <table>
-    <thead><tr><th>Pattern</th><th>Quiz score</th></tr></thead>
-    <tbody>
-      <tr><td>Full delegation</td><td>24–39%</td></tr>
-      <tr><td>Progressive reliance</td><td>24–39%</td></tr>
-      <tr><td>Iterative AI debugging</td><td>24–39%</td></tr>
-      <tr class="win"><td>Generation-then-comprehension</td><td>65–86%</td></tr>
-      <tr class="win"><td>Hybrid code-explanation</td><td>65–86%</td></tr>
-      <tr class="win"><td>Conceptual inquiry</td><td>65–86%</td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:1em;"><span class="accent">The differentiator is cognitive engagement, not AI presence.</span></p>
-</section>
+  <!-- ── Slide 3: The Evidence ─────────────────── -->
+  <section class="slide" data-index="2">
+    <div class="tag">The Evidence</div>
+    <h2>Two Damning Studies</h2>
+    <div class="grid-2" style="margin-top: 24px; max-width: 1020px;">
+      <div class="panel" style="border-top: 3px solid var(--danger);">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--danger); margin-bottom:14px; text-transform:uppercase;">Anthropic RCT — 52 Devs</div>
+        <div style="display:flex; gap:20px; align-items:flex-end; margin-bottom:16px;">
+          <div>
+            <div class="stat-big danger">17%</div>
+            <div class="stat-label">lower comprehension</div>
+          </div>
+        </div>
+        <ul class="clean" style="font-size:13px;">
+          <li>AI users scored <strong class="danger">50%</strong> vs control's <strong class="success">67%</strong></li>
+          <li>Largest gap in <strong>debugging</strong> — the exact skill needed to supervise AI</li>
+          <li>Control group hit <strong>3× more errors</strong> — and this was <span class="success">beneficial</span></li>
+        </ul>
+      </div>
+      <div class="panel" style="border-top: 3px solid var(--warn);">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--warn); margin-bottom:14px; text-transform:uppercase;">METR Study — 16 OSS Devs · July 2025</div>
+        <div style="display:flex; gap:20px; align-items:flex-end; margin-bottom:16px;">
+          <div>
+            <div class="stat-big warn">19%</div>
+            <div class="stat-label">slower with AI tools</div>
+          </div>
+        </div>
+        <ul class="clean" style="font-size:13px;">
+          <li>Devs <em>believed</em> they were <strong class="success">20% faster</strong></li>
+          <li>Perception gap: <strong class="warn">+39 percentage points</strong> off reality</li>
+          <li style="color:var(--danger); font-weight:600;">You cannot self-assess the damage</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel accent-border" style="margin-top: 20px; max-width:1020px;">
+      <p style="font-size: 14px;">The perception gap is the scariest finding. Developers felt faster, more capable — while actually performing worse and learning less. The feedback loop is broken.</p>
+    </div>
+  </section>
 
-<section>
-  <h2>10 foundations</h2>
-  <h3>Sensei isn't opinion — it's a composite of established research.</h3>
-  <div class="two-col">
-    <ul>
-      <li>1. Socratic Method <span style="color:#666">— Paul &amp; Elder</span></li>
-      <li>2. Deliberate Practice <span style="color:#666">— Ericsson</span></li>
-      <li>3. Zone of Proximal Development <span style="color:#666">— Vygotsky</span></li>
-      <li>4. Generation Effect <span style="color:#666">— Slamecka &amp; Graf</span></li>
-      <li>5. Desirable Difficulties <span style="color:#666">— Bjork</span></li>
-    </ul>
-    <ul>
-      <li>6. Cognitive Load Theory <span style="color:#666">— Sweller / Kalyuga</span></li>
-      <li>7. Protégé Effect <span style="color:#666">— Chase et al.</span></li>
-      <li>8. Pair Programming <span style="color:#666">— Plonka</span></li>
-      <li>9. AI Tutoring <span style="color:#666">— Khanmigo, SocraticAI</span></li>
-      <li>10. Automation Complacency <span style="color:#666">— Parasuraman</span></li>
-    </ul>
-  </div>
-</section>
+  <!-- ── Slide 4: The Six Patterns ─────────────── -->
+  <section class="slide" data-index="3">
+    <div class="tag">Anthropic RCT — 6 Interaction Patterns</div>
+    <h2>The Cliff Between Delegation and Inquiry</h2>
+    <div class="w-wide" style="margin-top: 20px;">
+      <div class="bar-chart" id="barChart">
+        <div class="bar-row">
+          <div class="bar-label">AI Delegation</div>
+          <div class="bar-track"><div class="bar-fill low" data-pct="31.5" style="width:0%"></div></div>
+          <div class="bar-value danger">24–39%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Progressive Reliance</div>
+          <div class="bar-track"><div class="bar-fill low" data-pct="31.5" style="width:0%"></div></div>
+          <div class="bar-value danger">24–39%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Iterative AI Debugging</div>
+          <div class="bar-track"><div class="bar-fill low" data-pct="31.5" style="width:0%"></div></div>
+          <div class="bar-value danger">24–39%</div>
+        </div>
+        <div class="bar-cliff"></div>
+        <div class="bar-row">
+          <div class="bar-label">Generation-Then-Comprehension</div>
+          <div class="bar-track"><div class="bar-fill high" data-pct="75.5" style="width:0%"></div></div>
+          <div class="bar-value success">65–86%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Hybrid Code + Explanation</div>
+          <div class="bar-track"><div class="bar-fill high" data-pct="75.5" style="width:0%"></div></div>
+          <div class="bar-value success">65–86%</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">Conceptual Inquiry</div>
+          <div class="bar-track"><div class="bar-fill high" data-pct="75.5" style="width:0%"></div></div>
+          <div class="bar-value success">65–86%</div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:16px; text-align:center;">Quiz scores (comprehension). Fastest completion = worst learning. Slowest = best.</p>
+    </div>
+  </section>
 
-<section>
-  <h2>Socratic method</h2>
-  <p style="text-align:left;"><strong>Core:</strong> Questions lead to deeper understanding than answers.</p>
-  <p style="text-align:left;"><strong>Six question types:</strong></p>
-  <ul style="font-size:0.75em;">
-    <li>Clarification — "what exactly do you mean?"</li>
-    <li>Assumption probes — "what are you assuming here?"</li>
-    <li>Evidence — "what tells you that's the bottleneck?"</li>
-    <li>Perspective — "how would the consumer of this API see it?"</li>
-    <li>Implication — "if this fails at 3am, what happens?"</li>
-    <li>Meta — "are we solving the right problem?"</li>
-  </ul>
-  <p class="cite">Paul &amp; Elder (2006)</p>
-</section>
+  <!-- ── Slide 5: The Differentiator ───────────── -->
+  <section class="slide" data-index="4">
+    <div class="tag">The Differentiator</div>
+    <h2>It's Not About AI Presence</h2>
+    <div class="w-full" style="margin-top: 28px;">
+      <div style="text-align:center; margin-bottom:36px;">
+        <div style="font-size:clamp(20px,3.2vw,38px); font-weight:800; color:var(--text-bright); letter-spacing:-0.02em;">
+          Cognitive Engagement,<br><span class="highlight">Not AI Presence</span>
+        </div>
+        <div style="width:80px; height:3px; background:var(--accent); border-radius:2px; margin:20px auto;"></div>
+      </div>
+      <div class="grid-2" style="max-width: 860px; margin: 0 auto;">
+        <div class="panel" style="text-align:center; border-top:3px solid var(--danger);">
+          <div style="font-size:32px; margin-bottom:12px;">🧟</div>
+          <h3 style="color:var(--danger); margin-bottom:8px;">Passive Consumption</h3>
+          <p style="font-size:13px; color:var(--text-dim);">AI generates → you accept → you ship. No mental model forms. Fast today, fragile tomorrow.</p>
+        </div>
+        <div class="panel" style="text-align:center; border-top:3px solid var(--success);">
+          <div style="font-size:32px; margin-bottom:12px;">🔥</div>
+          <h3 style="color:var(--success); margin-bottom:8px;">Active Inquiry</h3>
+          <p style="font-size:13px; color:var(--text-dim);">You struggle → AI clarifies → you synthesize. Slower session, permanent capability gain.</p>
+        </div>
+      </div>
+    </div>
+    <div class="panel accent-border" style="margin-top:24px; max-width:860px;">
+      <p style="font-size:14px;">All three high-scoring patterns kept the developer <strong>mentally in the driver's seat</strong>. All three low-scoring patterns moved mental effort to the AI.</p>
+    </div>
+  </section>
 
-<section>
-  <h2>Generation effect</h2>
-  <p style="text-align:left;">Self-generated information is remembered <span class="accent">significantly better</span> than passively received information.</p>
-  <p style="text-align:left;">fMRI confirms: generation activates broader brain networks.</p>
-  <p class="quote">Even a <strong>wrong attempt</strong> at a solution produces better learning than reading the correct answer.</p>
-  <p class="cite">Slamecka &amp; Graf (1978); Rosner et al. (2013)</p>
-</section>
+  <!-- ── Slide 6: Generation Effect + Desirable Difficulties ── -->
+  <section class="slide" data-index="5">
+    <div class="tag">Learning Science · Foundations 1 & 2</div>
+    <h2>Why Struggle Is the Feature, Not the Bug</h2>
+    <div class="grid-2" style="margin-top:24px; max-width:1020px;">
+      <div class="panel">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--purple); margin-bottom:12px; text-transform:uppercase;">The Generation Effect — Slamecka & Graf</div>
+        <p style="font-size:14px; margin-bottom:12px;">Self-generated information is <strong class="highlight">retained significantly longer</strong> than passively received information.</p>
+        <div class="panel" style="background:rgba(167,139,250,0.08); border-color:rgba(167,139,250,0.3); padding:14px 16px;">
+          <p style="font-size:13px; font-style:italic; color:var(--text-bright);">"Even a wrong attempt beats reading the correct answer."</p>
+        </div>
+        <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">The attempt itself encodes context, prediction error, and schema — none of which happen when AI generates for you.</p>
+      </div>
+      <div class="panel">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--gold); margin-bottom:12px; text-transform:uppercase;">Desirable Difficulties — Robert Bjork</div>
+        <p style="font-size:14px; margin-bottom:12px;">Conditions that <strong class="warn">slow initial learning</strong> produce <strong class="success">stronger long-term retention</strong>.</p>
+        <ul class="clean" style="font-size:13px;">
+          <li><span class="number-badge">1</span> <strong>Spacing</strong> — spread practice over time</li>
+          <li><span class="number-badge">2</span> <strong>Interleaving</strong> — mix problem types</li>
+          <li><span class="number-badge">3</span> <strong>Retrieval practice</strong> — test, don't re-read</li>
+        </ul>
+        <p style="font-size:13px; color:var(--text-dim); margin-top:12px;">AI that removes friction removes the mechanism of learning itself.</p>
+      </div>
+    </div>
+    <div style="margin-top:20px; text-align:center; font-size:14px; color:var(--text-muted);">
+      The friction is not a bug in the learning process. It <em>is</em> the learning process.
+    </div>
+  </section>
 
-<section>
-  <h2>Zone of Proximal Development</h2>
-  <h3>— Vygotsky, 1978</h3>
-  <p style="text-align:left;">Learning happens between <em>"can do alone"</em> and <em>"can do with guidance"</em>.</p>
-  <p style="text-align:left;">Too easy → no growth. Too hard → shutdown.</p>
-  <p style="text-align:left;" class="accent">The scaffold must fade.</p>
-  <p style="text-align:left;">A scaffold that never fades becomes a crutch.</p>
-</section>
+  <!-- ── Slide 7: ZPD + Expertise Reversal ──────── -->
+  <section class="slide" data-index="6">
+    <div class="tag">Learning Science · Foundations 3 & 4</div>
+    <h2>The Scaffold Must Fade</h2>
+    <div class="flex-row" style="margin-top:24px; align-items:center;">
+      <div class="flex-col" style="flex:1; gap:0;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--accent-bright); margin-bottom:14px; text-transform:uppercase;">Zone of Proximal Development — Vygotsky</div>
 
-<section>
-  <h2>Cognitive load — the twist</h2>
-  <h3>Kalyuga's Expertise Reversal Effect</h3>
-  <p style="text-align:left;">Scaffolding that <strong>helps novices</strong> actively <strong>harms experts</strong>.</p>
-  <p style="text-align:left;">The same teaching technique can speed or stall learning depending on who's using it.</p>
-  <p style="text-align:left;" class="accent">High complexity + low expertise → heavy scaffold.<br/>Low complexity + high expertise → step back.</p>
-  <p class="cite">Kalyuga &amp; Sweller — Expertise Reversal Effect</p>
-</section>
+        <div class="zpd-diagram">
+          <div class="zpd-circle zpd-outer"></div>
+          <div class="zpd-circle zpd-middle"></div>
+          <div class="zpd-circle zpd-inner"></div>
+          <div class="zpd-label" style="color:var(--success); bottom:6px; left:50%; transform:translateX(-50%);">
+            Can do alone
+          </div>
+          <div class="zpd-label" style="color:var(--accent-bright); top:50%; left:50%; transform:translate(-50%,-50%); margin-top:-10px;">
+            ZPD<br><span style="font-size:8px; font-weight:400; text-transform:none;">with guidance</span>
+          </div>
+          <div class="zpd-label" style="color:var(--purple); top:6px; left:50%; transform:translateX(-50%);">
+            Out of reach
+          </div>
+        </div>
 
-<section>
-  <h2>Desirable difficulties</h2>
-  <h3>Robert Bjork, UCLA</h3>
-  <p style="text-align:left;">Conditions that <em>slow initial learning</em> often produce <strong>stronger long-term retention</strong>.</p>
-  <p style="text-align:left;">Four difficulties:</p>
-  <ul style="font-size:0.8em;">
-    <li>Spacing <span style="color:#666">(vs cramming)</span></li>
-    <li>Interleaving <span style="color:#666">(vs blocking)</span></li>
-    <li>Retrieval practice <span style="color:#666">(vs re-reading)</span></li>
-    <li>Varying conditions</li>
-  </ul>
-  <p class="quote">Students prefer the easy path — which feels effective but produces the worst long-term results.</p>
-</section>
+        <p style="font-size:13px; color:var(--text-dim); margin-top:14px; max-width:320px;">
+          AI should stretch you into the ZPD — not skip over it by doing the work. The scaffold must fade as competence grows.
+        </p>
+      </div>
 
-<section>
-  <h2>Protégé effect</h2>
-  <p style="text-align:left;">Teaching, or preparing to teach, produces <span class="accent">significantly better learning</span> than studying alone.</p>
-  <p style="text-align:left;">Three mechanisms:</p>
-  <ul style="font-size:0.85em;">
-    <li>Preparation — forces organisation</li>
-    <li>Retrieval — forces recall</li>
-    <li>Feedback — questions reveal gaps</li>
-  </ul>
-  <p class="quote">"Explain this middleware chain to me like I'm new to Fastify."</p>
-  <p class="cite">Chase, Chin, Oppezzo &amp; Schwartz (2009) Stanford</p>
-</section>
+      <div class="flex-col" style="flex:1; gap:16px;">
+        <div class="panel" style="border-top: 3px solid var(--warn);">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--warn); margin-bottom:10px; text-transform:uppercase;">Expertise Reversal Effect — John Sweller</div>
+          <p style="font-size:14px; margin-bottom:10px;">Scaffolding that <strong>helps novices</strong> actively <strong class="danger">harms experts</strong>.</p>
+          <p style="font-size:13px; color:var(--text-dim);">As a developer's skill grows, step-by-step AI guidance becomes cognitive interference — filling working memory with redundant information, crowding out the expert's own efficient schemas.</p>
+        </div>
+        <div class="panel accent-border">
+          <p style="font-size:13px;"><strong>Implication:</strong> The right level of AI help is not static. Sensei Mode must continuously calibrate — less scaffold as you grow, more only when genuinely stuck.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section>
-  <h2>Automation complacency</h2>
-  <p style="text-align:left;">Humans relying on automation systematically reduce monitoring, lose situational awareness, and suffer <strong>skill atrophy</strong>.</p>
-  <p style="text-align:left;">Documented in aviation (Air France 447), medicine, and now software.</p>
-  <p class="quote">Devs stop reading docs. Debugging instincts erode. Architecture thinking weakens.</p>
-  <p class="cite">Parasuraman &amp; Manzey (2010); Addy Osmani — Google Chrome</p>
-</section>
+  <!-- ── Slide 8: Automation Complacency ───────── -->
+  <section class="slide" data-index="7">
+    <div class="tag">Learning Science · Foundation 5</div>
+    <h2>Automation Complacency</h2>
+    <div class="flex-row" style="margin-top:24px; align-items:flex-start;">
+      <div class="flex-col" style="flex:1; gap:16px;">
+        <div class="panel" style="border-top:3px solid var(--danger);">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--danger); margin-bottom:10px; text-transform:uppercase;">Parasuraman's Research</div>
+          <p style="font-size:14px;">When humans delegate to automation, they reduce monitoring, lose situational awareness, and suffer <strong class="danger">skill atrophy</strong> — even while feeling more capable.</p>
+        </div>
+        <div class="panel">
+          <div style="font-size:32px; margin-bottom:10px;">✈️</div>
+          <h3 style="margin-bottom:8px;">Air France 447 — 2009</h3>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.65;">Pilots flew the Airbus A330 manually for so rarely that when automation failed at 38,000 ft, they could not recover basic manual flight. The autopilot had maintained their competence — until it couldn't.</p>
+          <div style="margin-top:12px; padding:10px 14px; background:rgba(248,113,113,0.08); border-radius:8px; border-left:3px solid var(--danger);">
+            <p style="font-size:12px; color:var(--danger); font-weight:600;">228 lives. The cost of outsourced situational awareness.</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="flex:1; gap:16px;">
 
-<section>
-  <h2>The design</h2>
-  <h3>From research to skill.</h3>
-  <p style="text-align:left;">Sensei combines three enforcement layers:</p>
-  <ul>
-    <li>⛩️ <strong>Behavioral rules</strong> — Socratic defaults in <code>SKILL.md</code></li>
-    <li>⛩️ <strong>Structural handoffs</strong> — <code>TODO(human)</code> stop-and-wait</li>
-    <li>⛩️ <strong>UserPromptSubmit hook</strong> — survives long sessions</li>
-  </ul>
-</section>
+        <!-- Atrophy curve SVG -->
+        <div class="panel" style="padding:20px;">
+          <div style="font-size:11px; font-weight:600; color:var(--text-dim); margin-bottom:14px; letter-spacing:0.08em;">SKILL LEVEL OVER TIME</div>
+          <svg class="curve-svg" viewBox="0 0 460 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gHuman" x1="0" y1="0" x2="460" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#34d399"/>
+                <stop offset="1" stop-color="#34d399" stop-opacity="0.5"/>
+              </linearGradient>
+              <linearGradient id="gAI" x1="0" y1="0" x2="460" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#f87171"/>
+                <stop offset="1" stop-color="#f87171" stop-opacity="0.5"/>
+              </linearGradient>
+              <linearGradient id="gSensei" x1="0" y1="0" x2="460" y2="0" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#3b82f6"/>
+                <stop offset="1" stop-color="#60a5fa"/>
+              </linearGradient>
+            </defs>
+            <!-- Axes -->
+            <line x1="40" y1="10" x2="40" y2="165" stroke="#2d4a7a" stroke-width="1.5"/>
+            <line x1="40" y1="165" x2="450" y2="165" stroke="#2d4a7a" stroke-width="1.5"/>
+            <text x="16" y="168" fill="#4a7fa8" font-size="10" font-family="Inter">Low</text>
+            <text x="14" y="18" fill="#4a7fa8" font-size="10" font-family="Inter">High</text>
+            <text x="44" y="179" fill="#4a7fa8" font-size="10" font-family="Inter">Start</text>
+            <text x="400" y="179" fill="#4a7fa8" font-size="10" font-family="Inter">Time →</text>
 
-<section>
-  <h2>5-level scaffolding</h2>
-  <table>
-    <tbody>
-      <tr><td><span class="level">L5</span> Full Scaffold</td><td>Developer is lost. Shape given, logic blank.</td></tr>
-      <tr><td><span class="level">L4</span> Guided Discovery</td><td>Name the pattern class. Walk through steps.</td></tr>
-      <tr><td><span class="level">L3</span> Socratic <em>(default)</em></td><td>Respond with questions, not code.</td></tr>
-      <tr><td><span class="level">L2</span> Minimal Hint</td><td>Two words. "Think about coupling."</td></tr>
-      <tr><td><span class="level">L1</span> Observer</td><td>Watch silently. Only speak on critical mistakes.</td></tr>
-    </tbody>
-  </table>
-  <p style="margin-top:1em;">Default to L3. Escalate when genuinely stuck. <span class="accent">Fade</span> as competence grows.</p>
-</section>
+            <!-- AI delegation: rises sharply then falls -->
+            <path d="M40,140 C80,100 130,50 200,45 C260,40 300,55 350,90 C390,115 420,135 450,148"
+                  stroke="url(#gAI)" stroke-width="2.5" stroke-dasharray="5,3"/>
 
-<section>
-  <h2>The TODO(human) pattern</h2>
-  <h3>Adapted from Claude Learning Mode.</h3>
-  <ul style="font-size:0.8em;">
-    <li>For 20+ lines involving design decisions, Sensei inserts a <code>TODO(human)</code></li>
-    <li>Only one marker at a time</li>
-    <li>Structured handoff: <strong>Context</strong> · <strong>Your task</strong> · <strong>Guidance</strong></li>
-    <li>Sensei <strong>stops and waits</strong></li>
-    <li>Post-contribution: one insight connecting their code to broader patterns. No praise.</li>
-  </ul>
-</section>
+            <!-- Human solo: slow steady rise -->
+            <path d="M40,140 C100,130 180,110 260,90 C330,74 390,62 450,55"
+                  stroke="url(#gHuman)" stroke-width="2.5"/>
 
-<section>
-  <h2>Session reports</h2>
-  <h3>What Sensei writes when you toggle off.</h3>
-  <pre><code># Sensei Session Report — 2026-04-09
+            <!-- Sensei: faster than human, sustainable -->
+            <path d="M40,140 C90,115 170,80 260,55 C340,34 410,26 450,22"
+                  stroke="url(#gSensei)" stroke-width="3"/>
 
-## What Went Well
-- Independently debugged the N+1 after one hint
-- Correctly identified the cache race without guidance
+            <!-- AI adoption marker -->
+            <line x1="180" y1="15" x2="180" y2="165" stroke="#fbbf24" stroke-width="1" stroke-dasharray="3,3"/>
+            <text x="138" y="12" fill="#fbbf24" font-size="9" font-family="Inter">AI adoption</text>
 
-## Growth Areas
-- Knex subquery syntax still needed scaffolding
-- Could explain WHAT the resolver did, not WHY
+            <!-- Legend -->
+            <line x1="50" y1="22" x2="75" y2="22" stroke="#f87171" stroke-width="2" stroke-dasharray="4,2"/>
+            <text x="80" y="26" fill="#f87171" font-size="9" font-family="Inter">Full delegation</text>
+            <line x1="180" y1="22" x2="205" y2="22" stroke="#34d399" stroke-width="2"/>
+            <text x="210" y="26" fill="#34d399" font-size="9" font-family="Inter">No AI</text>
+            <line x1="280" y1="22" x2="305" y2="22" stroke="#60a5fa" stroke-width="2.5"/>
+            <text x="310" y="26" fill="#60a5fa" font-size="9" font-family="Inter">Sensei Mode</text>
+          </svg>
+        </div>
 
-## Knowledge Gaps Detected
-- [ ] GraphQL: DataLoader pattern
+        <div class="panel accent-border">
+          <p style="font-size:13px;">The parallel to software development: when the AI always drives, the human loses the ability to steer — precisely when the AI makes its inevitable mistake.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-## Sensei's Note
-> You're building velocity without foundation. The Knex gap is
-> mechanical — practice will close it. The "why not just what"
-> gap is more important. Keep asking yourself "why this pattern?"
-</code></pre>
-</section>
+  <!-- ── Slide 9: Bloom's 2 Sigma ──────────────── -->
+  <section class="slide" data-index="8">
+    <div class="tag">Learning Science · Foundation 6</div>
+    <h2>Bloom's 2 Sigma Problem</h2>
+    <div class="flex-row" style="margin-top:24px; align-items:flex-start; gap:40px;">
+      <div class="flex-col" style="flex:1; gap:16px;">
+        <div class="panel" style="border-top:3px solid var(--gold);">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--gold); margin-bottom:12px; text-transform:uppercase;">Benjamin Bloom — 1984</div>
+          <p style="font-size:14px; margin-bottom:12px;">1:1 human tutoring produces a <strong class="gold">2 standard deviation improvement</strong> in student outcomes — moving the average student to the 98th percentile.</p>
+          <p style="font-size:13px; color:var(--text-dim);">The problem: human tutors don't scale. For decades, this was an unsolvable constraint. AI changes the equation.</p>
+        </div>
+        <div class="panel">
+          <h3 style="margin-bottom:10px; font-size:14px;">Khanmigo — Khan Academy's AI Tutor</h3>
+          <div class="stat-big highlight" style="font-size:40px;">700K</div>
+          <div class="stat-label">users — by refusing to give answers</div>
+          <p style="font-size:13px; color:var(--text-dim); margin-top:10px;">Khanmigo asks questions back. "What do you think?" is the most-used phrase. Growth came from productive struggle, not convenience.</p>
+        </div>
+      </div>
+      <div class="flex-col" style="flex:1; gap:12px; align-items:center;">
+        <div style="font-size:11px; font-weight:600; color:var(--text-dim); letter-spacing:0.08em; align-self:flex-start;">LEARNING OUTCOME IMPROVEMENT</div>
+        <div class="sigma-bar" style="width:100%; max-width:340px; height:160px;">
+          <div class="sigma-col">
+            <div class="sigma-fill" style="background: linear-gradient(180deg, #2d4a7a, #1e3a5f); height:60px;">+0σ</div>
+            <div class="sigma-name">Class<br>instruction</div>
+          </div>
+          <div class="sigma-col">
+            <div class="sigma-fill" style="background: linear-gradient(180deg, #1d4ed8, #2563eb); height:90px;">+1σ</div>
+            <div class="sigma-name">Mastery<br>learning</div>
+          </div>
+          <div class="sigma-col">
+            <div class="sigma-fill" style="background: linear-gradient(180deg, #1e40af, #3b82f6); height:130px; color:var(--text-bright);">+1.7σ</div>
+            <div class="sigma-name">AI tutor<br>(potential)</div>
+          </div>
+          <div class="sigma-col">
+            <div class="sigma-fill" style="background: linear-gradient(180deg, #fbbf24, #f59e0b); height:160px; color:#1e293b;">+2σ</div>
+            <div class="sigma-name">1:1 human<br>tutor</div>
+          </div>
+        </div>
+        <div class="panel accent-border" style="margin-top:8px;">
+          <p style="font-size:13px;">AI can approximate 1:1 tutoring at scale — <em>if</em> it refuses to be a vending machine for answers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section>
-  <h2>Spaced retrieval</h2>
-  <p style="text-align:left;">Gaps persist across sessions in <code>&lt;storage&gt;/gaps.md</code>.</p>
-  <p style="text-align:left;">On the next session, Sensei weaves retrieval in naturally:</p>
-  <p class="quote">"Before we start — you had a gap in DataLoader last time. Without looking, what do you remember about how it batches?"</p>
-  <p style="text-align:left;">A gap only closes when the developer demonstrates competence <strong>unprompted</strong>. Getting it right with help doesn't count.</p>
-</section>
+  <!-- ── Slide 10: Sensei Mode Design ──────────── -->
+  <section class="slide" data-index="9">
+    <div class="tag">Sensei Mode Design</div>
+    <h2>Philosophy + Activation</h2>
+    <div class="flex-row" style="margin-top:24px; align-items:flex-start;">
+      <div class="flex-col" style="flex:1; gap:16px;">
+        <div class="panel" style="border-top:3px solid var(--accent);">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--accent-bright); margin-bottom:12px; text-transform:uppercase;">Core Philosophy</div>
+          <p style="font-size:15px; font-weight:600; color:var(--text-bright); margin-bottom:10px; line-height:1.5;">AI as guide, not doer.<br>Developer writes code. AI illuminates the path.</p>
+          <p style="font-size:13px; color:var(--text-dim);">Inspired by martial arts: the sensei demonstrates once, then watches you practice. They don't do the kata for you. The discomfort of repetition <em>is</em> the instruction.</p>
+        </div>
+        <div class="panel">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:12px; text-transform:uppercase;">Inspired By</div>
+          <ul class="clean" style="font-size:13px;">
+            <li><span class="number-badge">1</span> Socratic method — questions over answers</li>
+            <li><span class="number-badge">2</span> Bloom's 2 Sigma — 1:1 tutoring that scales</li>
+            <li><span class="number-badge">3</span> Khanmigo — refuses to answer, asks back</li>
+            <li><span class="number-badge">4</span> Pair programming navigator/driver</li>
+          </ul>
+        </div>
+      </div>
+      <div class="flex-col" style="flex:1; gap:16px;">
+        <div class="panel">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:14px; text-transform:uppercase;">Activation Commands</div>
+          <div class="cmd-list">
+            <span class="cmd">/sensei</span>
+            <span class="cmd">/sensei on</span>
+            <span class="cmd">/sensei off</span>
+            <span class="cmd">/sensei setup</span>
+            <span class="cmd">/sensei gaps</span>
+          </div>
+        </div>
+        <div class="panel" style="background:rgba(59,130,246,0.06); border-color:rgba(59,130,246,0.3);">
+          <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--accent-bright); margin-bottom:10px; text-transform:uppercase;">Default Behaviour</div>
+          <p style="font-size:14px; color:var(--text-bright); font-weight:600; margin-bottom:8px;">Level 3 — Socratic Questioning</p>
+          <p style="font-size:13px; color:var(--text-dim);">Escalates to 4–5 only when genuinely stuck. De-escalates automatically as competence is demonstrated.</p>
+        </div>
+        <div class="panel accent-border">
+          <p style="font-size:13px;"><strong>Session reports auto-generate on toggle-off.</strong> <strong>/sensei gaps</strong> surfaces unreviewed gaps using spaced retrieval — the Protégé Effect at the session level. Teaching = deepest encoding.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section>
-  <h2>What Sensei is NOT</h2>
-  <ul>
-    <li>❌ Not paternalistic — it never auto-disables</li>
-    <li>❌ Not a gamified XP system — no streaks, no levels</li>
-    <li>❌ Not an assessment tool — it observes real work</li>
-    <li>❌ Not coupled to any note app — plain Markdown out</li>
-    <li>❌ Not a CV skill — but it writes gaps a CV skill can read</li>
-  </ul>
-  <p style="margin-top:1em;" class="accent">Celebrate understanding, not counts.</p>
-</section>
+  <!-- ── Slide 11: The Five Scaffolding Levels ─── -->
+  <section class="slide" data-index="10">
+    <div class="tag">Sensei Mode Design — Scaffolding Tiers</div>
+    <h2>Five Levels of Guidance</h2>
+    <div style="display:flex; gap:32px; margin-top:24px; align-items:flex-start; width:100%; max-width:1060px;">
+      <div class="ladder" style="flex:1.2;">
+        <div class="rung" style="background:rgba(248,113,113,0.06);">
+          <div class="rung-level" style="background:rgba(248,113,113,0.15); color:var(--danger);">5</div>
+          <div class="rung-body">
+            <div class="rung-title" style="color:var(--danger);">Full Scaffold <span class="pill" style="background:rgba(248,113,113,0.15); color:var(--danger);">when stuck</span></div>
+            <div class="rung-desc">"Here's the shape of what you need — try filling in the handler logic."</div>
+          </div>
+        </div>
+        <div class="rung" style="background:rgba(251,146,60,0.05);">
+          <div class="rung-level" style="background:rgba(251,146,60,0.15); color:var(--warn);">4</div>
+          <div class="rung-body">
+            <div class="rung-title" style="color:var(--warn);">Guided Discovery</div>
+            <div class="rung-desc">"What patterns do you know for decoupling?"</div>
+          </div>
+        </div>
+        <div class="rung" style="background:rgba(59,130,246,0.07); border-left: 3px solid var(--accent);">
+          <div class="rung-level" style="background:rgba(59,130,246,0.2); color:var(--accent-bright);">3</div>
+          <div class="rung-body">
+            <div class="rung-title" style="color:var(--accent-bright);">Socratic Questioning <span class="pill" style="background:rgba(59,130,246,0.15); color:var(--accent-bright); font-size:10px;">DEFAULT</span></div>
+            <div class="rung-desc">"Why are you importing X directly? What happens if you add a third subscriber?"</div>
+          </div>
+        </div>
+        <div class="rung" style="background:rgba(52,211,153,0.05);">
+          <div class="rung-level" style="background:rgba(52,211,153,0.15); color:var(--success);">2</div>
+          <div class="rung-body">
+            <div class="rung-title" style="color:var(--success);">Minimal Hint</div>
+            <div class="rung-desc">"Think about coupling."</div>
+          </div>
+        </div>
+        <div class="rung" style="background:rgba(52,211,153,0.03);">
+          <div class="rung-level" style="background:rgba(52,211,153,0.1); color:var(--success); opacity:0.7;">1</div>
+          <div class="rung-body">
+            <div class="rung-title" style="color:var(--text-dim);">Observer Mode</div>
+            <div class="rung-desc">Watches. Waits. Only speaks when asked or a critical mistake is imminent.</div>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="flex:0.8; gap:16px;">
+        <div class="panel">
+          <h3 style="font-size:14px; margin-bottom:10px;">Escalation Logic</h3>
+          <ul class="clean" style="font-size:13px;">
+            <li>Start at <strong class="highlight">Level 3</strong> by default</li>
+            <li>Move to 4–5 only when developer signals genuine blockage</li>
+            <li>Move down to 1–2 as competence on this concept grows</li>
+            <li>Never skip levels up without justification</li>
+          </ul>
+        </div>
+        <div class="panel accent-border">
+          <p style="font-size:13px;"><strong>Vygotsky's ZPD:</strong> the scaffold at Level 4–5 is temporary — it exists to be removed. The goal is always to fade.</p>
+        </div>
+        <div class="panel" style="background:rgba(248,113,113,0.06); border-color:rgba(248,113,113,0.3);">
+          <p style="font-size:13px; color:var(--danger); font-weight:600;">Anti-pattern to avoid:</p>
+          <p style="font-size:13px; color:var(--text-dim); margin-top:6px;">Going straight to Level 5 because it's faster. This is exactly how full delegation starts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-<section>
-  <h2>Install</h2>
-  <pre><code>git clone https://github.com/fredlemieux/claude-sensei-skill.git \
-  ~/.claude/skills/sensei-src
-ln -s ~/.claude/skills/sensei-src/skills/sensei \
-  ~/.claude/skills/sensei
+  <!-- ── Slide 12: The Three Tiers of Rules ──────── -->
+  <section class="slide" data-index="11">
+    <div class="tag">Sensei Mode Design — Rules</div>
+    <h2>Three Tiers: Never, Always, Adaptive</h2>
+    <div class="grid-2" style="margin-top:24px; max-width:1040px;">
+      <div class="panel" style="border-top:3px solid var(--danger);">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--danger); margin-bottom:16px; text-transform:uppercase;">Never Do</div>
+        <div>
+          <div class="rule-row">
+            <div class="rule-icon never">✕</div>
+            <p style="font-size:14px;">Generate a complete solution <strong>unprompted</strong></p>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon never">✕</div>
+            <p style="font-size:14px;">Write code the developer <strong>didn't attempt first</strong></p>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon never">✕</div>
+            <p style="font-size:14px;">Fix a bug without first asking <strong>"What do you think is happening here?"</strong></p>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="border-top:3px solid var(--success);">
+        <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--success); margin-bottom:16px; text-transform:uppercase;">Always Do</div>
+        <div>
+          <div class="rule-row">
+            <div class="rule-icon always">✓</div>
+            <p style="font-size:14px;">Ask what developer <strong>tried before</strong> offering guidance</p>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon always">✓</div>
+            <p style="font-size:14px;">When "how do I do X?" → <strong>"What approaches have you considered?"</strong></p>
+          </div>
+          <div class="rule-row">
+            <div class="rule-icon always">✓</div>
+            <p style="font-size:14px;">Use the <strong>lightest touch possible</strong> — escalate only on failure</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:20px; max-width:1040px; background:rgba(59,130,246,0.06); border-color:rgba(59,130,246,0.3);">
+      <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:var(--accent-bright); margin-bottom:10px; text-transform:uppercase;">Adaptive — The Socratic Method in Practice</div>
+      <p style="font-size:14px; color:var(--text-bright);">Six question types, used in rotation:</p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Clarification</span>
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Assumptions</span>
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Evidence</span>
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Perspectives</span>
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Implications</span>
+        <span class="pill" style="background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); color:var(--text);">Meta-questions</span>
+      </div>
+    </div>
+  </section>
 
-# then register the hook in ~/.claude/settings.json
-# and run /sensei setup</code></pre>
-  <p style="margin-top:1.5em;">
-    <a href="https://github.com/fredlemieux/claude-sensei-skill">github.com/fredlemieux/claude-sensei-skill</a>
-  </p>
-</section>
+  <!-- ── Slide 13: The Lightest Touch ──────────── -->
+  <section class="slide" data-index="12">
+    <div class="tag">Sensei Mode Design — Core Principle</div>
+    <h2>The Lightest Touch Possible</h2>
+    <div class="w-wide" style="margin-top:28px;">
+      <div class="touch-scale">
+        <div class="touch-step lightest">
+          <span class="touch-icon">💡</span>
+          <span class="touch-label" style="color:var(--success);">Hint</span>
+          <span class="touch-sub">"Think about coupling." One word, maximum leverage.</span>
+        </div>
+        <div class="touch-step">
+          <span class="touch-icon">❓</span>
+          <span class="touch-label" style="color:var(--accent-bright);">Question</span>
+          <span class="touch-sub">"What happens if you add a third subscriber?"</span>
+        </div>
+        <div class="touch-step">
+          <span class="touch-icon">📖</span>
+          <span class="touch-label">Explanation</span>
+          <span class="touch-sub">Concept clarification without implementation.</span>
+        </div>
+        <div class="touch-step">
+          <span class="touch-icon">🔍</span>
+          <span class="touch-label" style="color:var(--warn);">Example</span>
+          <span class="touch-sub">Analogous pattern from a different domain.</span>
+        </div>
+        <div class="touch-step heaviest">
+          <span class="touch-icon">💻</span>
+          <span class="touch-label" style="color:var(--danger);">Code</span>
+          <span class="touch-sub">Last resort. Only when all else fails. Partial preferred.</span>
+        </div>
+      </div>
+    </div>
+    <div class="panel accent-border" style="margin-top:28px; max-width:860px;">
+      <p style="font-size:15px; font-weight:600; color:var(--text-bright); margin-bottom:8px;">The Pair Programming Escalation Model</p>
+      <p style="font-size:14px; color:var(--text-dim);">Best pair programmers default to hints. They escalate to direct instruction only when their partner is genuinely blocked — and even then, they prefer to guide rather than take over the keyboard.</p>
+    </div>
+    <p style="margin-top:20px; font-size:13px; color:var(--text-muted); max-width:700px; text-align:center;">
+      Each step to the right is a step toward dependency. Use the lightest intervention that unblocks forward motion.
+    </p>
+  </section>
 
-<section class="cover">
-  <span class="kana">先生</span>
-  <h1>I shall guide.</h1>
-  <h1>You shall discover.</h1>
-  <div class="meta"><a href="https://github.com/fredlemieux/claude-sensei-skill">github.com/fredlemieux/claude-sensei-skill</a></div>
-</section>
+  <!-- ── Slide 14: CTA ──────────────────────────── -->
+  <section class="slide cta-slide" data-index="13">
+    <div class="tag" style="text-align:center;">Sensei Mode — The Commitment</div>
+    <div class="cta-tagline">Code like it matters.</div>
+    <div class="cta-tagline"><span class="line2">Learn like it lasts.</span></div>
 
-</div></div>
+    <div class="title-divider" style="margin-top:28px;"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+    <p style="font-size:16px; color:var(--text-dim); max-width:560px; text-align:center; line-height:1.75; margin-top:4px;">
+      Productivity without understanding is technical debt of the mind. Sensei Mode is the bet that the two aren't in conflict — you can ship fast <em>and</em> get smarter.
+    </p>
+
+    <div class="grid-3" style="margin-top:36px; max-width:840px;">
+      <div class="panel" style="text-align:center; padding:20px 16px;">
+        <div style="font-size:28px; margin-bottom:8px;">🎯</div>
+        <div style="font-size:13px; font-weight:600; color:var(--text-bright); margin-bottom:4px;">Cognitive engagement</div>
+        <div style="font-size:12px; color:var(--text-muted);">Stay mentally in the driver's seat</div>
+      </div>
+      <div class="panel" style="text-align:center; padding:20px 16px;">
+        <div style="font-size:28px; margin-bottom:8px;">🪜</div>
+        <div style="font-size:13px; font-weight:600; color:var(--text-bright); margin-bottom:4px;">Adaptive scaffolding</div>
+        <div style="font-size:12px; color:var(--text-muted);">Fades as your competence grows</div>
+      </div>
+      <div class="panel" style="text-align:center; padding:20px 16px;">
+        <div style="font-size:28px; margin-bottom:8px;">🥋</div>
+        <div style="font-size:13px; font-weight:600; color:var(--text-bright); margin-bottom:4px;">The sensei's discipline</div>
+        <div style="font-size:12px; color:var(--text-muted);">Watches you practice. Rarely demonstrates.</div>
+      </div>
+    </div>
+
+    <div class="cmd-list" style="margin-top:28px; justify-content:center;">
+      <span class="cmd">/sensei</span>
+      <span style="color:var(--text-muted); font-size:14px; align-self:center;">— activate when you want to actually learn</span>
+    </div>
+  </section>
+
+</div>
+
+<!-- ── Navigation ──────────────────────────────── -->
+<nav id="nav">
+  <button id="prevBtn" disabled aria-label="Previous slide">&#8592;</button>
+  <span id="counter">1 / 14</span>
+  <button id="nextBtn" aria-label="Next slide">&#8594;</button>
+</nav>
+
 <script>
-Reveal.initialize({
-  hash: true,
-  slideNumber: 'c/t',
-  transition: 'fade',
-  controls: true,
-  progress: true,
-  plugins: [ RevealHighlight ]
-});
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+  let animating = false;
+
+  const counter = document.getElementById('counter');
+  const badge = document.getElementById('slide-badge');
+  const progress = document.getElementById('progress');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function updateUI() {
+    counter.textContent = `${current + 1} / ${total}`;
+    badge.textContent = `${current + 1} / ${total}`;
+    progress.style.width = `${((current + 1) / total) * 100}%`;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+  }
+
+  function goTo(idx) {
+    if (animating || idx < 0 || idx >= total || idx === current) return;
+    animating = true;
+
+    const old = slides[current];
+    const next = slides[idx];
+
+    old.classList.add('exiting');
+
+    setTimeout(() => {
+      old.classList.remove('active', 'exiting');
+      next.classList.add('active');
+      current = idx;
+      updateUI();
+
+      // Animate bars if we're on the bar chart slide
+      if (current === 3) animateBars();
+
+      setTimeout(() => { animating = false; }, 450);
+    }, 300);
+  }
+
+  function animateBars() {
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+      const pct = parseFloat(bar.dataset.pct);
+      bar.style.width = pct + '%';
+    });
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    }
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) dx < 0 ? goTo(current + 1) : goTo(current - 1);
+  });
+
+  // Init
+  updateUI();
+
+  // If starting on bar chart slide, animate immediately
+  if (current === 3) animateBars();
 </script>
 </body>
 </html>
