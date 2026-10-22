@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Sensei Mode — The Research</title>
+<meta name="description" content="A Claude Code skill that turns Claude from a doer into a guide, built on 10 learning-science foundations."/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css"/>
+<style>
+  :root { --accent: #d4a24c; --paper: #f3ead3; --ink: #121212; }
+  .reveal { font-family: ui-serif, Georgia, "Times New Roman", serif; }
+  .reveal h1, .reveal h2, .reveal h3 { font-family: ui-serif, Georgia, "Times New Roman", serif; letter-spacing: -0.01em; }
+  .reveal h1 { color: var(--paper); }
+  .reveal h2 { color: var(--accent); font-weight: 600; }
+  .reveal h3 { color: var(--paper); font-weight: 400; font-style: italic; }
+  .reveal .accent { color: var(--accent); }
+  .reveal .quote { font-style: italic; color: #ccc; border-left: 3px solid var(--accent); padding-left: 1em; text-align: left; }
+  .reveal .cite { font-size: 0.5em; color: #888; display: block; margin-top: 1em; }
+  .reveal table { font-size: 0.6em; margin: 0 auto; }
+  .reveal table th { color: var(--accent); border-bottom: 1px solid var(--accent); padding: .4em .8em; }
+  .reveal table td { padding: .4em .8em; border-bottom: 1px solid #333; }
+  .reveal table tr.win td { color: var(--paper); }
+  .reveal table tr.win td:nth-child(2) { color: var(--accent); font-weight: 600; }
+  .reveal .big { font-size: 2.2em; color: var(--accent); font-weight: 700; }
+  .reveal .kana { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; color: var(--accent); font-size: 1.8em; }
+  .reveal section.cover { text-align: center; }
+  .reveal section.cover .kana { font-size: 4em; margin-bottom: 0.1em; display: block; }
+  .reveal section.cover h1 { font-size: 2.4em; margin: 0; }
+  .reveal section.cover .tag { color: #aaa; font-style: italic; margin-top: 0.6em; }
+  .reveal section.cover .meta { color: #666; font-size: 0.5em; margin-top: 3em; }
+  .reveal .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2em; text-align: left; }
+  .reveal ul { list-style: none; padding-left: 0; }
+  .reveal ul li { padding: .25em 0; border-bottom: 1px dashed #333; }
+  .reveal .level { color: var(--accent); font-weight: 700; }
+  .reveal .footer { position: fixed; bottom: 10px; right: 20px; font-size: 0.4em; color: #555; }
+  .reveal a { color: var(--accent); }
+  code { background: #1b1b1b; padding: 0.1em 0.4em; border-radius: 3px; color: var(--paper); }
+  pre code { font-size: 0.75em; }
+</style>
+</head>
+<body>
+<div class="footer">⛩️ sensei mode · <a href="https://github.com/fredlemieux/claude-sensei-skill">github</a></div>
+<div class="reveal"><div class="slides">
+
+<section class="cover">
+  <span class="kana">先生</span>
+  <h1>Sensei Mode</h1>
+  <div class="tag">A Claude Code skill that guides rather than solves.</div>
+  <div class="meta">Research &amp; design — <a href="https://github.com/fredlemieux/claude-sensei-skill">fredlemieux/claude-sensei-skill</a></div>
+</section>
+
+<section>
+  <h2>The problem</h2>
+  <p class="quote">
+    "I'm really thinking about the lack of learning and deep thinking and the
+    handing over of all the work... it's hugely productive and I'm getting
+    an insane amount done... but I'm losing something."
+  </p>
+  <p class="cite">— The developer who commissioned this skill.</p>
+  <p>This is not a feeling. It's backed by hard science.</p>
+</section>
+
+<section>
+  <h2>Anthropic RCT, 2026</h2>
+  <p>52 professional developers. Randomised. Controlled.</p>
+  <p class="big">−17 pp</p>
+  <p>Developers using AI scored <span class="accent">17 percentage points lower</span> on comprehension (50% vs 67%).</p>
+  <p>Largest gap: <strong>debugging</strong>. The exact skill needed to supervise AI output.</p>
+  <p class="cite"><a href="https://arxiv.org/html/2601.20245v1">arxiv.org/html/2601.20245v1</a></p>
+</section>
+
+<section>
+  <h2>METR study, 2025</h2>
+  <p>16 experienced OSS devs with AI tools.</p>
+  <p class="big">−19% speed</p>
+  <p>…but they <em>believed</em> they were <span class="accent">20% faster</span>.</p>
+  <p>The perception gap is the scariest part — you can't self-assess the damage.</p>
+  <p class="cite"><a href="https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/">metr.org</a></p>
+</section>
+
+<section>
+  <h2>Six interaction patterns</h2>
+  <h3>(Anthropic RCT — worst to best)</h3>
+  <table>
+    <thead><tr><th>Pattern</th><th>Quiz score</th></tr></thead>
+    <tbody>
+      <tr><td>Full delegation</td><td>24–39%</td></tr>
+      <tr><td>Progressive reliance</td><td>24–39%</td></tr>
+      <tr><td>Iterative AI debugging</td><td>24–39%</td></tr>
+      <tr class="win"><td>Generation-then-comprehension</td><td>65–86%</td></tr>
+      <tr class="win"><td>Hybrid code-explanation</td><td>65–86%</td></tr>
+      <tr class="win"><td>Conceptual inquiry</td><td>65–86%</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:1em;"><span class="accent">The differentiator is cognitive engagement, not AI presence.</span></p>
+</section>
+
+<section>
+  <h2>10 foundations</h2>
+  <h3>Sensei isn't opinion — it's a composite of established research.</h3>
+  <div class="two-col">
+    <ul>
+      <li>1. Socratic Method <span style="color:#666">— Paul &amp; Elder</span></li>
+      <li>2. Deliberate Practice <span style="color:#666">— Ericsson</span></li>
+      <li>3. Zone of Proximal Development <span style="color:#666">— Vygotsky</span></li>
+      <li>4. Generation Effect <span style="color:#666">— Slamecka &amp; Graf</span></li>
+      <li>5. Desirable Difficulties <span style="color:#666">— Bjork</span></li>
+    </ul>
+    <ul>
+      <li>6. Cognitive Load Theory <span style="color:#666">— Sweller / Kalyuga</span></li>
+      <li>7. Protégé Effect <span style="color:#666">— Chase et al.</span></li>
+      <li>8. Pair Programming <span style="color:#666">— Plonka</span></li>
+      <li>9. AI Tutoring <span style="color:#666">— Khanmigo, SocraticAI</span></li>
+      <li>10. Automation Complacency <span style="color:#666">— Parasuraman</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Socratic method</h2>
+  <p style="text-align:left;"><strong>Core:</strong> Questions lead to deeper understanding than answers.</p>
+  <p style="text-align:left;"><strong>Six question types:</strong></p>
+  <ul style="font-size:0.75em;">
+    <li>Clarification — "what exactly do you mean?"</li>
+    <li>Assumption probes — "what are you assuming here?"</li>
+    <li>Evidence — "what tells you that's the bottleneck?"</li>
+    <li>Perspective — "how would the consumer of this API see it?"</li>
+    <li>Implication — "if this fails at 3am, what happens?"</li>
+    <li>Meta — "are we solving the right problem?"</li>
+  </ul>
+  <p class="cite">Paul &amp; Elder (2006)</p>
+</section>
+
+<section>
+  <h2>Generation effect</h2>
+  <p style="text-align:left;">Self-generated information is remembered <span class="accent">significantly better</span> than passively received information.</p>
+  <p style="text-align:left;">fMRI confirms: generation activates broader brain networks.</p>
+  <p class="quote">Even a <strong>wrong attempt</strong> at a solution produces better learning than reading the correct answer.</p>
+  <p class="cite">Slamecka &amp; Graf (1978); Rosner et al. (2013)</p>
+</section>
+
+<section>
+  <h2>Zone of Proximal Development</h2>
+  <h3>— Vygotsky, 1978</h3>
+  <p style="text-align:left;">Learning happens between <em>"can do alone"</em> and <em>"can do with guidance"</em>.</p>
+  <p style="text-align:left;">Too easy → no growth. Too hard → shutdown.</p>
+  <p style="text-align:left;" class="accent">The scaffold must fade.</p>
+  <p style="text-align:left;">A scaffold that never fades becomes a crutch.</p>
+</section>
+
+<section>
+  <h2>Cognitive load — the twist</h2>
+  <h3>Kalyuga's Expertise Reversal Effect</h3>
+  <p style="text-align:left;">Scaffolding that <strong>helps novices</strong> actively <strong>harms experts</strong>.</p>
+  <p style="text-align:left;">The same teaching technique can speed or stall learning depending on who's using it.</p>
+  <p style="text-align:left;" class="accent">High complexity + low expertise → heavy scaffold.<br/>Low complexity + high expertise → step back.</p>
+  <p class="cite">Kalyuga &amp; Sweller — Expertise Reversal Effect</p>
+</section>
+
+<section>
+  <h2>Desirable difficulties</h2>
+  <h3>Robert Bjork, UCLA</h3>
+  <p style="text-align:left;">Conditions that <em>slow initial learning</em> often produce <strong>stronger long-term retention</strong>.</p>
+  <p style="text-align:left;">Four difficulties:</p>
+  <ul style="font-size:0.8em;">
+    <li>Spacing <span style="color:#666">(vs cramming)</span></li>
+    <li>Interleaving <span style="color:#666">(vs blocking)</span></li>
+    <li>Retrieval practice <span style="color:#666">(vs re-reading)</span></li>
+    <li>Varying conditions</li>
+  </ul>
+  <p class="quote">Students prefer the easy path — which feels effective but produces the worst long-term results.</p>
+</section>
+
+<section>
+  <h2>Protégé effect</h2>
+  <p style="text-align:left;">Teaching, or preparing to teach, produces <span class="accent">significantly better learning</span> than studying alone.</p>
+  <p style="text-align:left;">Three mechanisms:</p>
+  <ul style="font-size:0.85em;">
+    <li>Preparation — forces organisation</li>
+    <li>Retrieval — forces recall</li>
+    <li>Feedback — questions reveal gaps</li>
+  </ul>
+  <p class="quote">"Explain this middleware chain to me like I'm new to Fastify."</p>
+  <p class="cite">Chase, Chin, Oppezzo &amp; Schwartz (2009) Stanford</p>
+</section>
+
+<section>
+  <h2>Automation complacency</h2>
+  <p style="text-align:left;">Humans relying on automation systematically reduce monitoring, lose situational awareness, and suffer <strong>skill atrophy</strong>.</p>
+  <p style="text-align:left;">Documented in aviation (Air France 447), medicine, and now software.</p>
+  <p class="quote">Devs stop reading docs. Debugging instincts erode. Architecture thinking weakens.</p>
+  <p class="cite">Parasuraman &amp; Manzey (2010); Addy Osmani — Google Chrome</p>
+</section>
+
+<section>
+  <h2>The design</h2>
+  <h3>From research to skill.</h3>
+  <p style="text-align:left;">Sensei combines three enforcement layers:</p>
+  <ul>
+    <li>⛩️ <strong>Behavioral rules</strong> — Socratic defaults in <code>SKILL.md</code></li>
+    <li>⛩️ <strong>Structural handoffs</strong> — <code>TODO(human)</code> stop-and-wait</li>
+    <li>⛩️ <strong>UserPromptSubmit hook</strong> — survives long sessions</li>
+  </ul>
+</section>
+
+<section>
+  <h2>5-level scaffolding</h2>
+  <table>
+    <tbody>
+      <tr><td><span class="level">L5</span> Full Scaffold</td><td>Developer is lost. Shape given, logic blank.</td></tr>
+      <tr><td><span class="level">L4</span> Guided Discovery</td><td>Name the pattern class. Walk through steps.</td></tr>
+      <tr><td><span class="level">L3</span> Socratic <em>(default)</em></td><td>Respond with questions, not code.</td></tr>
+      <tr><td><span class="level">L2</span> Minimal Hint</td><td>Two words. "Think about coupling."</td></tr>
+      <tr><td><span class="level">L1</span> Observer</td><td>Watch silently. Only speak on critical mistakes.</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:1em;">Default to L3. Escalate when genuinely stuck. <span class="accent">Fade</span> as competence grows.</p>
+</section>
+
+<section>
+  <h2>The TODO(human) pattern</h2>
+  <h3>Adapted from Claude Learning Mode.</h3>
+  <ul style="font-size:0.8em;">
+    <li>For 20+ lines involving design decisions, Sensei inserts a <code>TODO(human)</code></li>
+    <li>Only one marker at a time</li>
+    <li>Structured handoff: <strong>Context</strong> · <strong>Your task</strong> · <strong>Guidance</strong></li>
+    <li>Sensei <strong>stops and waits</strong></li>
+    <li>Post-contribution: one insight connecting their code to broader patterns. No praise.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Session reports</h2>
+  <h3>What Sensei writes when you toggle off.</h3>
+  <pre><code># Sensei Session Report — 2026-04-09
+
+## What Went Well
+- Independently debugged the N+1 after one hint
+- Correctly identified the cache race without guidance
+
+## Growth Areas
+- Knex subquery syntax still needed scaffolding
+- Could explain WHAT the resolver did, not WHY
+
+## Knowledge Gaps Detected
+- [ ] GraphQL: DataLoader pattern
+
+## Sensei's Note
+> You're building velocity without foundation. The Knex gap is
+> mechanical — practice will close it. The "why not just what"
+> gap is more important. Keep asking yourself "why this pattern?"
+</code></pre>
+</section>
+
+<section>
+  <h2>Spaced retrieval</h2>
+  <p style="text-align:left;">Gaps persist across sessions in <code>&lt;storage&gt;/gaps.md</code>.</p>
+  <p style="text-align:left;">On the next session, Sensei weaves retrieval in naturally:</p>
+  <p class="quote">"Before we start — you had a gap in DataLoader last time. Without looking, what do you remember about how it batches?"</p>
+  <p style="text-align:left;">A gap only closes when the developer demonstrates competence <strong>unprompted</strong>. Getting it right with help doesn't count.</p>
+</section>
+
+<section>
+  <h2>What Sensei is NOT</h2>
+  <ul>
+    <li>❌ Not paternalistic — it never auto-disables</li>
+    <li>❌ Not a gamified XP system — no streaks, no levels</li>
+    <li>❌ Not an assessment tool — it observes real work</li>
+    <li>❌ Not coupled to any note app — plain Markdown out</li>
+    <li>❌ Not a CV skill — but it writes gaps a CV skill can read</li>
+  </ul>
+  <p style="margin-top:1em;" class="accent">Celebrate understanding, not counts.</p>
+</section>
+
+<section>
+  <h2>Install</h2>
+  <pre><code>git clone https://github.com/fredlemieux/claude-sensei-skill.git \
+  ~/.claude/skills/sensei-src
+ln -s ~/.claude/skills/sensei-src/skills/sensei \
+  ~/.claude/skills/sensei
+
+# then register the hook in ~/.claude/settings.json
+# and run /sensei setup</code></pre>
+  <p style="margin-top:1.5em;">
+    <a href="https://github.com/fredlemieux/claude-sensei-skill">github.com/fredlemieux/claude-sensei-skill</a>
+  </p>
+</section>
+
+<section class="cover">
+  <span class="kana">先生</span>
+  <h1>I shall guide.</h1>
+  <h1>You shall discover.</h1>
+  <div class="meta"><a href="https://github.com/fredlemieux/claude-sensei-skill">github.com/fredlemieux/claude-sensei-skill</a></div>
+</section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  transition: 'fade',
+  controls: true,
+  progress: true,
+  plugins: [ RevealHighlight ]
+});
+</script>
+</body>
+</html>

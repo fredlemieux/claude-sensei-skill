@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local sensei state (should never live in the repo)
+config.json
+*.local
